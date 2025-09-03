@@ -6,15 +6,21 @@ import {
     deleteNote,
     updateNote,
 } from '../controllers/note.controllers.js';
-import {isLoggedIn} from "../middlewares/isLoggedIn.middleware.js"
+import { isLoggedIn } from '../middlewares/isLoggedIn.middleware.js';
+import { validatePermission } from '../middlewares/validatePermission.middleware.js';
+import { AvailableUserRoles, UserRolesEnum } from '../utils/constants.js';
 
 const router = express.Router();
 
-router.use(isLoggedIn)
+router.use(isLoggedIn);
 
-router.route('/:projectId').get(getNotes);
-router.route('/:noteId').get(getNoteById);
+router
+    .route('/:projectId')
+    .get(validatePermission(AvailableUserRoles), getNotes)
+    .post(validatePermission([UserRolesEnum.ADMIN]), createNote);
 
-router.route('/create/:projectId').post(createNote);
-router.route('/update/:noteId').post(updateNote);
-router.route('/delete/:noteId').post(deleteNote);
+router
+    .route('/:projectId/n/:noteId')
+    .get(validatePermission(AvailableUserRoles), getNoteById)
+    .put(validatePermission([UserRolesEnum.ADMIN]), updateNote)
+    .delete(validatePermission([UserRolesEnum.ADMIN]), deleteNote);

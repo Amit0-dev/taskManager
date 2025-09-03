@@ -3,6 +3,8 @@ import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { isValidObjectId } from 'mongoose';
 import { ProjectNote } from '../models/note.model.js';
+import {Project} from "../models/project.model.js"
+import mongoose from 'mongoose';
 
 const getNotes = asyncHandler(async (req, res) => {
     const { projectId } = req.params;
@@ -11,10 +13,15 @@ const getNotes = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Invalid project Id');
     }
 
+    const project = await Project.findById(projectId)
+
+    if(!project){
+        throw new ApiError(400, "Project not found")
+    }
+
     const notes = await ProjectNote.find({
         project: projectId,
-        createdBy: req.user?._id,
-    });
+    }).populate("createdBy", "username fullname email avatar");
 
     return res
         .status(200)
@@ -28,7 +35,7 @@ const getNoteById = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Invalid NoteId');
     }
 
-    const note = await ProjectNote.findOne({ _id: noteId });
+    const note = await ProjectNote.findOne({ _id: noteId }).populate("createdBy", "username fullname email avatar");
 
     if (!note) {
         throw new ApiError('Invalid NoteId');
@@ -51,6 +58,12 @@ const createNote = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Content is required');
     }
 
+    const project = await Project.findById(projectId)
+
+    if(!project){
+        throw new ApiError(400, "Project not found")
+    }
+
     const note = await ProjectNote.create({
         createdBy: req.user?._id,
         project: projectId,
@@ -61,9 +74,16 @@ const createNote = asyncHandler(async (req, res) => {
         throw new ApiError(400, 'Something went wrong while creating note');
     }
 
+    const populatedNote = await ProjectNote.findById(note?._id).populate("createdBy", "username fullname email avatar")
+
+    if(!populatedNote){
+        throw new ApiError(400, "Note not found")
+    }
+    
+
     return res
         .status(200)
-        .json(new ApiResponse(200, note, 'Note created successfully'));
+        .json(new ApiResponse(200, populatedNote, 'Note created successfully'));
 });
 
 const updateNote = asyncHandler(async (req, res) => {
@@ -86,7 +106,7 @@ const updateNote = asyncHandler(async (req, res) => {
             },
         },
         { new: true }
-    );
+    ).populate("createdBy", "username fullname email avatar");
 
     if (!updatedNote) {
         throw new ApiError(400, 'failed to update');

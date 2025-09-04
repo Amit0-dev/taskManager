@@ -11,7 +11,13 @@ import {
     refreshAccessToken,
 } from '../controllers/user.controllers.js';
 import { validate } from '../middlewares/validator.middleware.js';
-import { userRegistrationValidator } from '../validators/index.js';
+import {
+    userChangeCurrentPasswordValidator,
+    userFogotPasswordValidator,
+    userLoginValidator,
+    userRegistrationValidator,
+    userResetForgottenPasswordValidator,
+} from '../validators/index.js';
 import { isLoggedIn } from '../middlewares/isLoggedIn.middleware.js';
 
 const router = express.Router();
@@ -20,16 +26,31 @@ const router = express.Router();
 router
     .route('/register')
     .post(userRegistrationValidator(), validate, registerUser);
-router.route('/login').post(loginUser);
+router.route('/login').post(userLoginValidator(), validate, loginUser);
 router.route('/logout').post(isLoggedIn, logoutUser);
 
 router.route('/verify/:token').post(verifyEmail);
 
-router.route('/forgot-password').post(forgotPasswordRequest);
+router
+    .route('/forgot-password')
+    .post(userFogotPasswordValidator(), validate, forgotPasswordRequest);
 
-router.route('/reset-password/:token').post(resetForgottenPassword);
+router
+    .route('/reset-password/:token')
+    .post(
+        userResetForgottenPasswordValidator(),
+        validate,
+        resetForgottenPassword
+    );
 
-router.route('/change-password').post(isLoggedIn, changeCurrentPassword);
+router
+    .route('/change-password')
+    .post(
+        userChangeCurrentPasswordValidator(),
+        validate,
+        isLoggedIn,
+        changeCurrentPassword
+    );
 
 router.route('/refresh-access-token').post(refreshAccessToken);
 

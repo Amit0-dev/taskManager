@@ -5,16 +5,39 @@ import {
     createProject,
     updateProject,
     deleteProject,
+    getProjectMembers,
+    addMemberToProject,
+    deleteMember,
+    updateMemberRole,
 } from '../controllers/project.controllers.js';
 import { isLoggedIn } from '../middlewares/isLoggedIn.middleware.js';
+import {
+    projectMemberValidator,
+    projectValidator,
+} from '../validators/index.js';
+import { validate } from '../middlewares/validator.middleware.js';
 
 const router = express.Router();
 
 router.use(isLoggedIn);
 
-router.route('/').get(getProjects);
-router.route('/:projectId').get(getProjectById);
+router
+    .route('/')
+    .get(getProjects)
+    .post(projectValidator(), validate, createProject);
 
-router.route('/create').post(createProject);
-router.route('/update/:projectId').post(updateProject);
-router.route('/delete/:/:projectId').post(deleteProject);
+router
+    .route('/:projectId')
+    .get(getProjectById)
+    .put(projectValidator(), validate, updateProject)
+    .delete(deleteProject);
+
+router
+    .route('/:projectId')
+    .get(getProjectMembers)
+    .post(projectMemberValidator(), validate, addMemberToProject);
+
+router
+    .route('/:projectMemberId')
+    .delete(deleteMember)
+    .put(projectMemberValidator(), validate, updateMemberRole);
